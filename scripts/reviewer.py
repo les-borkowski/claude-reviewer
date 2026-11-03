@@ -107,6 +107,9 @@ def build_parser():
 
 def main(argv=None):
     args = build_parser().parse_args(argv)
+    # The skill writes run files under .reviewer/ between calls; make sure the
+    # first of them never shows up as untracked in the reviewed repo.
+    reviewer_log.ensure_dir(args.repo)
     return HANDLERS[args.cmd](args)
 
 
