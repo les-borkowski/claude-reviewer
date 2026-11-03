@@ -1,0 +1,7 @@
+{
+  "name": "reviewer",
+  "version": "0.1.0",
+  "description": "Pre-PR simplification review: finds code that can be smaller without changing behaviour, against written per-language rules. /reviewer:review, /reviewer:stats.",
+  "author": {"name": "Les Borkowski"},
+  "keywords": ["code-review", "simplification", "yagni", "refactoring"]
+}
