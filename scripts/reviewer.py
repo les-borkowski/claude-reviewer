@@ -13,9 +13,7 @@ import reviewer_log
 import reviewer_merge
 import reviewer_prepare
 import reviewer_scope
-
-SUBCOMMANDS = ["scope", "merge", "rank", "log-run", "acted-on",
-               "tools", "context", "intent", "stats"]
+import reviewer_stats
 
 
 def read_json(path):
@@ -71,18 +69,23 @@ def prepare_cmd(fn):
     return handler
 
 
+def cmd_stats(args):
+    print(reviewer_stats.stats(reviewer_log.read_records(args.repo), args.last))
+    return 0
+
+
 HANDLERS = {"log-run": cmd_log_run, "acted-on": cmd_acted_on, "scope": cmd_scope,
             "merge": cmd_merge, "rank": cmd_rank,
             "tools": prepare_cmd(reviewer_prepare.run_tools),
             "context": prepare_cmd(reviewer_prepare.build_context),
-            "intent": prepare_cmd(reviewer_prepare.collect_intent)}
+            "intent": prepare_cmd(reviewer_prepare.collect_intent), "stats": cmd_stats}
 
 
 def build_parser():
     parser = argparse.ArgumentParser(prog="reviewer.py")
     sub = parser.add_subparsers(dest="cmd", required=True)
     subs = {}
-    for name in SUBCOMMANDS:
+    for name in HANDLERS:
         subs[name] = sub.add_parser(name)
         subs[name].add_argument("--repo", type=Path, default=Path.cwd())
     subs["log-run"].add_argument("--run", required=True)
@@ -98,16 +101,13 @@ def build_parser():
     subs["rank"].add_argument("--all", action="store_true")
     for name in ("tools", "context", "intent"):
         subs[name].add_argument("--scope", required=True)
+    subs["stats"].add_argument("--last", type=int, default=20)
     return parser
 
 
 def main(argv=None):
     args = build_parser().parse_args(argv)
-    handler = HANDLERS.get(args.cmd)
-    if handler is None:
-        print("not implemented", file=sys.stderr)
-        return 1
-    return handler(args)
+    return HANDLERS[args.cmd](args)
 
 
 if __name__ == "__main__":
