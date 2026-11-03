@@ -10,6 +10,7 @@ import sys
 from pathlib import Path
 
 import reviewer_log
+import reviewer_scope
 
 SUBCOMMANDS = ["scope", "merge", "rank", "log-run", "acted-on",
                "tools", "context", "intent", "stats"]
@@ -36,7 +37,16 @@ def cmd_acted_on(args):
     return 0
 
 
-HANDLERS = {"log-run": cmd_log_run, "acted-on": cmd_acted_on}
+def cmd_scope(args):
+    try:
+        print_json(reviewer_scope.compute_scope(args.repo, args.ref, args.full))
+    except reviewer_scope.NoBase as e:
+        print(e, file=sys.stderr)
+        return 2
+    return 0
+
+
+HANDLERS = {"log-run": cmd_log_run, "acted-on": cmd_acted_on, "scope": cmd_scope}
 
 
 def build_parser():
@@ -49,6 +59,8 @@ def build_parser():
     subs["log-run"].add_argument("--run", required=True)
     subs["log-run"].add_argument("--findings", required=True)
     subs["acted-on"].add_argument("--run-id", required=True)
+    subs["scope"].add_argument("--ref")
+    subs["scope"].add_argument("--full", action="store_true")
     return parser
 
 
