@@ -1,0 +1,15 @@
+{
+  "id": "java-planted-impl",
+  "lang": "java",
+  "kind": "planted",
+  "expected": [
+    {
+      "rule": "JV-01",
+      "path": "src/main/java/shop/DiscountService.java",
+      "lines": [
+        3,
+        5
+      ]
+    }
+  ]
+}

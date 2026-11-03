@@ -1,0 +1,15 @@
+{
+  "id": "ts-planted-derived-state",
+  "lang": "typescript-react",
+  "kind": "planted",
+  "expected": [
+    {
+      "rule": "RE-01",
+      "path": "src/CartSummary.tsx",
+      "lines": [
+        6,
+        10
+      ]
+    }
+  ]
+}

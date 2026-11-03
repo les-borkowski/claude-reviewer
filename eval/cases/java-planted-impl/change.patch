@@ -1,0 +1,45 @@
+diff --git a/src/main/java/shop/Checkout.java b/src/main/java/shop/Checkout.java
+index b0f92d5..903a604 100644
+--- a/src/main/java/shop/Checkout.java
++++ b/src/main/java/shop/Checkout.java
+@@ -3,7 +3,13 @@ package shop;
+ import java.util.List;
+ 
+ public class Checkout {
++    private final DiscountService discounts = new DiscountServiceImpl();
++
+     public long total(List<Order> orders) {
+         return orders.stream().mapToLong(Order::totalCents).sum();
+     }
++
++    public long payable(List<Order> orders) {
++        return discounts.apply(total(orders));
++    }
+ }
+diff --git a/src/main/java/shop/DiscountService.java b/src/main/java/shop/DiscountService.java
+new file mode 100644
+index 0000000..c409f7b
+--- /dev/null
++++ b/src/main/java/shop/DiscountService.java
+@@ -0,0 +1,5 @@
++package shop;
++
++public interface DiscountService {
++    long apply(long totalCents);
++}
+diff --git a/src/main/java/shop/DiscountServiceImpl.java b/src/main/java/shop/DiscountServiceImpl.java
+new file mode 100644
+index 0000000..111b101
+--- /dev/null
++++ b/src/main/java/shop/DiscountServiceImpl.java
+@@ -0,0 +1,10 @@
++package shop;
++
++public class DiscountServiceImpl implements DiscountService {
++    private static final long THRESHOLD_CENTS = 10_000;
++
++    @Override
++    public long apply(long totalCents) {
++        return totalCents >= THRESHOLD_CENTS ? totalCents * 9 / 10 : totalCents;
++    }
++}

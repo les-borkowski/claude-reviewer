@@ -1,0 +1,57 @@
+diff --git a/tests/test_wordstats.py b/tests/test_wordstats.py
+index 78fbdaf..230cc49 100644
+--- a/tests/test_wordstats.py
++++ b/tests/test_wordstats.py
+@@ -1,5 +1,15 @@
+-from wordstats import tokenize
++from wordstats import Report, tokenize, word_counts
+ 
+ 
+ def test_tokenize_strips_punctuation():
+     assert tokenize("Hello, world!") == ["hello", "world"]
++
++
++def test_word_counts():
++    assert word_counts("a b a") == {"a": 2, "b": 1}
++
++
++def test_report_renders_sorted_counts():
++    report = Report("Words")
++    report.set_title("Counts")
++    assert report.render("b a b") == "Counts\na: 1\nb: 2"
+diff --git a/wordstats.py b/wordstats.py
+index c340db5..52f8272 100644
+--- a/wordstats.py
++++ b/wordstats.py
+@@ -3,3 +3,31 @@
+ 
+ def tokenize(text):
+     return [w.strip(".,!?;:").lower() for w in text.split() if w.strip(".,!?;:")]
++
++
++def word_counts(text):
++    counts = {}
++    for word in tokenize(text):
++        if word in counts:
++            counts[word] = counts[word] + 1
++        else:
++            counts[word] = 1
++    return counts
++
++
++class Report:
++    def __init__(self, title):
++        self._title = title
++
++    def get_title(self):
++        return self._title
++
++    def set_title(self, title):
++        self._title = title
++
++    def render(self, text):
++        counts = word_counts(text)
++        lines = [self.get_title()]
++        for word in sorted(counts):
++            lines.append(f"{word}: {counts[word]}")
++        return "\n".join(lines)
