@@ -1,6 +1,8 @@
 # Reviewer: design
 
-Status: draft, not implemented.
+Status: draft, not implemented. v1 plan:
+[docs/superpowers/plans/2026-11-03-reviewer-v1.md](superpowers/plans/2026-11-03-reviewer-v1.md);
+its data formats supersede the examples here.
 
 ## Goal
 
@@ -80,8 +82,8 @@ Each has an ID so the tracker (below) can report on it.
   log, if it is still an ancestor of HEAD. Otherwise the merge-base with the
   default branch. Uncommitted changes are always included. `[ref]` overrides;
   `--full` forces the merge-base.
-- Diff over ~400 changed lines: say so in the report and review per file
-  group; recall drops sharply on large diffs.
+- Diff over ~400 changed lines: say so in the report; recall drops sharply
+  on large diffs. (v1 warns only; reviewing per file group is later.)
 - Skip generated files, lockfiles, migrations, vendored code.
 - **Keep markers (I6):** a line or block marked
   `reviewer: keep <RULE-ID> <reason>` (in the language's comment syntax) is
@@ -94,9 +96,11 @@ their votes are comparable.
 
 - **Standards:** `standards/common.md` + one file per language in the diff;
   repo docs (CLAUDE.md, CONTRIBUTING.md) win on conflict.
-- **Repo rule switches (I6):** `.reviewer/config` may list disabled rule IDs.
-- **Static tools (I1):** run only tools the repo already has, or that run
-  with no install (`uvx`, `npx`); never add a dependency to the repo.
+- **Repo rule switches (I6):** `.reviewer/config.json` may list disabled
+  rule IDs: `{"disabled_rules": ["PY-04"]}`.
+- **Static tools (I1):** v1 runs only tools already on `PATH` or declared by
+  the repo; no `uvx`/`npx` downloads. Never add a dependency to the repo.
+  Java adapters (PMD/CPD) are deferred to the first Java repo reviewed.
 
   | Need | Python | TypeScript | Java |
   |---|---|---|---|
@@ -181,9 +185,9 @@ inform. For each candidate, checks:
 5. Not on the lint skip-list from step 2.
 
 Returns keep/drop + one-line reason, and for kept findings a **coverage
-label (I8)**: `tested` (a test exercises the flagged lines: coverage data if
-the repo has it, else a test that calls the function), `untested`, or
-`unknown`. The report shows the label next to the fix; `untested` fixes say
+label (I8)**: `tested` (v1: a test file references the function or
+component; real coverage data later), `untested`, or `unknown` (no tests in
+the repo). The report shows the label next to the fix; `untested` fixes say
 "check by hand".
 
 ### 5–6. Rank and report
@@ -340,6 +344,6 @@ Incremental review (I7) keeps repeat runs small.
 4. Cap of 5: fixed, or per-repo setting?
 5. Finder count thresholds (2 under ~100 lines, else 5): tune from the eval
    set and tracker.
-6. Static tools via `uvx`/`npx` download on first use: acceptable, or only
-   tools the repo already declares?
+6. Static tools via `uvx`/`npx` download on first use: v1 says no (only
+   `PATH` or repo-declared tools). Revisit if the tracker shows tools rarely run.
 7. Minimum value of 3 lines: right threshold? Tune on the eval set.
