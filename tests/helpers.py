@@ -5,13 +5,11 @@ import io
 import pathlib
 import shutil
 import subprocess
-import sys
 import tempfile
 
-ROOT = pathlib.Path(__file__).resolve().parent.parent
-sys.path.insert(0, str(ROOT / "scripts"))
+import reviewer
 
-import reviewer  # noqa: E402
+ROOT = pathlib.Path(__file__).resolve().parent.parent
 
 
 def git(repo, *args):
