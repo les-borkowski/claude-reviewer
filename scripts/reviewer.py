@@ -11,6 +11,7 @@ from pathlib import Path
 
 import reviewer_log
 import reviewer_merge
+import reviewer_prepare
 import reviewer_scope
 
 SUBCOMMANDS = ["scope", "merge", "rank", "log-run", "acted-on",
@@ -63,8 +64,18 @@ def cmd_rank(args):
     return 0
 
 
+def prepare_cmd(fn):
+    def handler(args):
+        print_json(fn(args.repo, read_json(args.scope)))
+        return 0
+    return handler
+
+
 HANDLERS = {"log-run": cmd_log_run, "acted-on": cmd_acted_on, "scope": cmd_scope,
-            "merge": cmd_merge, "rank": cmd_rank}
+            "merge": cmd_merge, "rank": cmd_rank,
+            "tools": prepare_cmd(reviewer_prepare.run_tools),
+            "context": prepare_cmd(reviewer_prepare.build_context),
+            "intent": prepare_cmd(reviewer_prepare.collect_intent)}
 
 
 def build_parser():
@@ -85,6 +96,8 @@ def build_parser():
     subs["rank"].add_argument("--merged", required=True)
     subs["rank"].add_argument("--verdicts", required=True)
     subs["rank"].add_argument("--all", action="store_true")
+    for name in ("tools", "context", "intent"):
+        subs[name].add_argument("--scope", required=True)
     return parser
 
 
