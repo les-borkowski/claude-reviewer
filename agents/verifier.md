@@ -38,6 +38,13 @@ file.
 5. **Not lint:** the finding is not already on the lint skip-list
    (`tools.json` `lint`: same path and line); the linter will report it.
 
+## Wrong rule, real finding
+
+If the finding is real and passes every check, but cites the wrong rule (say
+CM-01 "dead code" for a one-caller hook that is RE-05), keep it and set
+`rule` to the id it really breaks, from `standards.md`. Judge the checks
+against that rule. Do not drop a real finding only for its label.
+
 ## Coverage label (kept findings)
 
 Find whether tests reference the function or component the finding touches.
@@ -68,6 +75,7 @@ merged finding:
 ```
 
 - `keep`: `true` or `false`. `reason`: one line, always.
+- `rule`: only when you correct the finding's rule (see above).
 - `confidence` and `coverage` are required when `keep` is `true` and may be
   omitted when it is `false`.
 

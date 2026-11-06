@@ -36,6 +36,11 @@ class AgentPromptTest(unittest.TestCase):
         for word in LENSES + ["case", "preserves", "lines_saved", "removes", "source"]:
             self.assertIn(f"`{word}`", body, word)
 
+    def test_finder_takes_lines_from_read(self):
+        # Baseline run: finders counted lines in the patch and cited lines past the
+        # end of the file, so merge dropped real findings as outside the diff.
+        self.assertIn("as Read", parse("agents/finder.md")[1])
+
     def test_verifier_mentions_formats(self):
         _, body = parse("agents/verifier.md")
         for word in ["keep", "confidence", "coverage", "tested", "untested", "unknown"]:

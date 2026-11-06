@@ -125,6 +125,14 @@ class RankTest(unittest.TestCase):
         self.assertEqual([(f["id"], f["confidence"]) for f in out["shown"]],
                          [("f2", 0.5), ("f1", 0.0)])
 
+    def test_verifier_can_correct_the_rule(self):
+        findings = [finding(1, 4), finding(2, 4)]
+        verdicts = [{"id": "f1", "keep": True, "confidence": 1, "rule": "RE-05"},
+                    {"id": "f2", "keep": True, "confidence": 1, "rule": "XX-99"}]
+        out = rank(findings, verdicts, 5, rules={"RE-05", "PY-02"})
+        self.assertEqual({f["id"]: f["rule"] for f in out["kept"]},
+                         {"f1": "RE-05", "f2": findings[1]["rule"]})  # unknown id: keep the old
+
     def test_rank_missing_verdict_is_dropped(self):
         findings = [finding(1, 4), finding(2, 4), finding(3, 4)]
         verdicts = [{"id": "f1", "keep": True, "confidence": 0.9},
@@ -153,7 +161,8 @@ class RuleIdsAndCliTest(unittest.TestCase):
         self.assertEqual((len(merged["findings"]), merged["dropped"]["rule_switch"]), (1, 1))
         merged_file = write(repo, "merged.json", out)
         verdicts = write(repo, "v.json", json.dumps([{"id": "f1", "keep": True, "confidence": 1}]))
-        code, out, _ = run_cli(repo, "rank", "--merged", str(merged_file), "--verdicts", str(verdicts))
+        code, out, _ = run_cli(repo, "rank", "--merged", str(merged_file), "--verdicts", str(verdicts),
+                               "--standards", str(ROOT / "standards"))
         self.assertEqual((code, len(json.loads(out)["shown"])), (0, 1))
 
 

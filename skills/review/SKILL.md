@@ -99,7 +99,7 @@ files (`merged.json`, `diff.patch`, `scope.json`, `standards.md`, `context.json`
 Then:
 
 ```bash
-python3 "${CLAUDE_PLUGIN_ROOT}/scripts/reviewer.py" rank --repo . --merged .reviewer/run/merged.json --verdicts .reviewer/run/verdicts.json [--all] > .reviewer/run/ranked.json
+python3 "${CLAUDE_PLUGIN_ROOT}/scripts/reviewer.py" rank --repo . --merged .reviewer/run/merged.json --verdicts .reviewer/run/verdicts.json --standards "${CLAUDE_PLUGIN_ROOT}/standards" [--all] > .reviewer/run/ranked.json
 ```
 
 ## 5–6. Rank and report

@@ -37,7 +37,8 @@ eval/cases/<id>/
   change.patch   a `git diff` applied on top and left uncommitted (the change under review)
 ```
 
-- **planted**: a change with known bloat; `expected` names each rule id,
+- **planted**: a change with known bloat; `expected` names each rule id (or a
+  list of equivalent ids, e.g. `["RE-04", "CM-03"]`, when either is right),
   path and line range (working-tree lines after the patch). Measures recall.
 - **clean**: a change a human judged lean; `expected` is `[]`. Measures
   precision.

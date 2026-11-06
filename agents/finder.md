@@ -67,7 +67,10 @@ nothing). One object per candidate:
 ```
 
 - `rule`: the rule id. `path`: repo-relative. `lines`: `[start, end]`,
-  inclusive, working-tree line numbers.
+  inclusive, working-tree line numbers. **Take them from the file as Read
+  shows it** (Read numbers every line), never by counting lines in
+  `diff.patch`, and check they fall inside a range in `scope.json`. A
+  candidate outside the ranges is discarded before anyone reads it.
 - `case`: the concrete instance, in one sentence. Mandatory.
 - `fix`: the smaller form (code or a precise instruction).
 - `lines_saved`: integer, lines the fix removes net.

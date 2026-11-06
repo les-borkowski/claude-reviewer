@@ -46,7 +46,9 @@ def materialise(case_dir, dest):
 
 
 def _matches(expected, shown):
-    return (expected["rule"], expected["path"]) == (shown["rule"], shown["path"]) and \
+    # `rule` may list equivalent rules, e.g. ["RE-04", "CM-03"] for a wrapper component.
+    rules = expected["rule"] if isinstance(expected["rule"], list) else [expected["rule"]]
+    return shown["rule"] in rules and expected["path"] == shown["path"] and \
         expected["lines"][0] <= shown["lines"][1] and shown["lines"][0] <= expected["lines"][1]
 
 

@@ -63,7 +63,8 @@ def cmd_merge(args):
 def cmd_rank(args):
     merged = read_json(args.merged)
     print_json(reviewer_merge.rank(merged["findings"], read_json(args.verdicts),
-                                   None if args.all else reviewer_merge.SHOW_CAP))
+                                   None if args.all else reviewer_merge.SHOW_CAP,
+                                   reviewer_merge.rule_ids(args.standards)))
     return 0
 
 
@@ -104,6 +105,7 @@ def build_parser():
     subs["merge"].add_argument("--finder", action="append", default=[], metavar="LENS=FILE")
     subs["rank"].add_argument("--merged", required=True)
     subs["rank"].add_argument("--verdicts", required=True)
+    subs["rank"].add_argument("--standards", required=True)
     subs["rank"].add_argument("--all", action="store_true")
     for name in ("diff", "tools", "context", "intent"):
         subs[name].add_argument("--scope", required=True)

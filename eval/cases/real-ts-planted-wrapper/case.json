@@ -4,7 +4,10 @@
   "kind": "planted",
   "expected": [
     {
-      "rule": "RE-04",
+      "rule": [
+        "RE-04",
+        "CM-03"
+      ],
       "path": "frontend/src/components/layout/AppShell.tsx",
       "lines": [
         62,

@@ -110,6 +110,7 @@ def build_records(repo, run_dir, run_id):
                 if isinstance(v, dict)}
     ranked = _read_run_file(run_dir, "ranked.json", {})
     shown = {f["id"]: f for f in ranked.get("shown", [])}
+    kept_rules = {f["id"]: f.get("rule") for f in ranked.get("kept", [])}
     coverage = {"tested": 0, "untested": 0, "unknown": 0,
                 **Counter(f.get("coverage", "unknown") for f in shown.values())}
     lenses = merged.get("lenses", [])
@@ -133,6 +134,7 @@ def build_records(repo, run_dir, run_id):
         findings.append({"type": "finding", "run_id": run_id,
                          **{k: f.get(k) for k in ("id", "rule", "path", "lines", "source",
                                                   "lenses", "votes")},
+                         "rule": kept_rules.get(f["id"]) or f.get("rule"),
                          "kept": kept, "shown": f["id"] in shown,
                          "reason": v.get("reason", "no verdict"),
                          "coverage": v.get("coverage") if kept else None,

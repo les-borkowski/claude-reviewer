@@ -260,6 +260,43 @@ finder count, models, rules or prompts.
 - Output: precision, recall, findings per clean diff, cost per run. Stored
   per run so changes can be compared.
 
+## Baseline
+
+First full run, 2026-11-06 (`eval/results/20261106T103219Z.json`, 26 cases:
+6 seed cases plus 20 from real simple-project-tool commits). No static tools
+were installed in the case repos, so I1 hints were absent.
+
+| Measure | Value |
+|---|---|
+| Precision | 0.83 (10 of 12 shown findings expected) |
+| Recall | 0.77 (10 of 13 expected findings shown) |
+| False positives per clean case | 0.08 (1 in 13 clean cases) |
+| Cost | $13.55 in total, about $0.54 per case |
+| Time | 49 min in total, 46–125 s per case; 1 case timed out at 900 s |
+
+What went wrong, from the orchestrator's own notes:
+
+- **Rule label (hook case):** both finders found the planted one-caller hook
+  but tagged it CM-01, not RE-05; the verifier agreed it was real under RE-05
+  and still dropped it, because it could only keep or drop.
+- **Line numbers (derived-state seed case):** both finders found the RE-01
+  problem but cited lines 40–47 in a 13-line file, so merge dropped them as
+  `outside_diff` before the verifier saw them.
+- **Equivalent rules (wrapper case):** the planted wrapper component was
+  reported as CM-03 (pass-through wrapper) where the case expected RE-04, its
+  React form. Counted as one false positive and one miss.
+- **Disputed clean case (asyncpg URL):** a real CM-04 suggestion
+  (SQLAlchemy's `make_url`), but its own fix says behaviour changes for odd
+  URLs, so verifier check 4 should have dropped it.
+- **Timeout (defensive case):** found the plant, but the run passed 900 s.
+- One finder of ~60 never wrote its output file.
+
+Changes after the baseline: the verifier may correct a finding's rule
+(`rule` in its verdict, checked against the standards); finders take line
+numbers from Read, not from counting in the patch; a case's expected `rule`
+may list equivalent ids (the wrapper case accepts RE-04 or CM-03). Re-scored
+with that last change only, the same run gives precision 0.92 and recall 0.85.
+
 ## Plugin layout
 
 ```

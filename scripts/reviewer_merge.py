@@ -99,14 +99,16 @@ def _confidence(value):
         return 0.0
 
 
-def rank(findings, verdicts, cap):
+def rank(findings, verdicts, cap, rules=frozenset()):
     by_id = {v.get("id"): v for v in verdicts if isinstance(v, dict)}
     kept = []
     for f in findings:
         v = by_id.get(f["id"])
         if v and v.get("keep") is True:
             confidence = _confidence(v.get("confidence"))
-            kept.append({**f, "confidence": confidence, "reason": v.get("reason", ""),
+            # The verifier may keep a real finding under the rule it really breaks.
+            rule = v.get("rule") if v.get("rule") in rules else f["rule"]
+            kept.append({**f, "rule": rule, "confidence": confidence, "reason": v.get("reason", ""),
                          "coverage": v.get("coverage", "unknown"),
                          "score": f["lines_saved"] * confidence * f["votes"]})
     kept.sort(key=lambda f: (-f["score"], int(f["id"][1:])))

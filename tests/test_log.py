@@ -174,6 +174,13 @@ class BuildRecordsTest(unittest.TestCase):
         self.assertEqual(records[0]["votes"], 2)
         self.assertEqual(records[0]["text_count"], 1)
 
+    def test_finding_record_uses_rule_corrected_by_verifier(self):
+        write(self.repo, ".reviewer/run/ranked.json", json.dumps(
+            {"shown": [{"id": "f1", "rule": "RE-05", "coverage": "tested"}],
+             "kept": [{"id": "f1", "rule": "RE-05"}], "dropped_by_verifier": 2}))
+        records = rl.build_records(self.repo, self.run_dir, "r9")
+        self.assertEqual(records[1]["rule"], "RE-05")
+
     def test_no_findings_means_no_ranking_files(self):
         (self.run_dir / "verdicts.json").unlink()
         (self.run_dir / "ranked.json").unlink()

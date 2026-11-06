@@ -47,12 +47,18 @@ class EvalTest(unittest.TestCase):
                 else:
                     self.assertEqual(data["expected"], [])
                 for exp in data["expected"]:
-                    self.assertIn(exp["rule"], rules)
+                    alternatives = exp["rule"] if isinstance(exp["rule"], list) else [exp["rule"]]
+                    self.assertTrue(alternatives and set(alternatives) <= rules, exp["rule"])
                     self.assertEqual(set(exp), {"rule", "path", "lines"})
 
     def test_score_matches_overlapping_same_rule(self):
         out = run_eval.score([f("PY-02", "a.py", [8, 15])], [f("PY-02", "a.py", [10, 12])])
         self.assertEqual(out, {"tp": 1, "fp": 0, "fn": 0})
+
+    def test_score_accepts_any_listed_rule(self):
+        exp = [{"rule": ["RE-04", "CM-03"], "path": "a.tsx", "lines": [5, 7]}]
+        self.assertEqual(run_eval.score(exp, [f("CM-03", "a.tsx", [5, 6])]),
+                         {"tp": 1, "fp": 0, "fn": 0})
 
     def test_score_wrong_rule_is_fp_and_fn(self):
         out = run_eval.score([f("PY-02", "a.py", [8, 15])], [f("CM-04", "a.py", [8, 15])])
