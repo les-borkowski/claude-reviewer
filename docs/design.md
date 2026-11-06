@@ -221,10 +221,13 @@ improvements are used:
 ```
 
 **Finding record**, one per merged candidate: run id, rule, file, lines,
-source, lens(es), votes, kept/dropped, reason, coverage label.
+source, lens(es), votes, kept/dropped, reason, coverage label, and the
+flagged lines' text. `log-run` builds both record types from the run files.
 
-**Acted on:** at the start of each run, earlier shown findings whose lines
-have since changed are marked acted on (ByteDance's "Outdated Rate").
+**Acted on:** at the start of each run, earlier shown findings whose flagged
+text no longer appears (as whole lines) in their file are marked acted on
+(ByteDance's "Outdated Rate"). Matching text, not line numbers, survives line
+shifts and works for files that were new when reviewed.
 
 **`/reviewer:stats`** (v1, read-only) prints, over the last N runs:
 

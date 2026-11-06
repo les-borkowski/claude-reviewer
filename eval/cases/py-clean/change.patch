@@ -1,0 +1,32 @@
+diff --git a/slugs.py b/slugs.py
+index 8a022f0..3c38fcc 100644
+--- a/slugs.py
++++ b/slugs.py
+@@ -3,3 +3,12 @@ import re
+ 
+ def slugify(text):
+     return re.sub(r"[^a-z0-9]+", "-", text.lower()).strip("-")
++
++
++def unique_slug(text, taken):
++    """Slug for text that is not in `taken`, adding -2, -3, ... on collision."""
++    base = slugify(text)
++    slug, n = base, 2
++    while slug in taken:
++        slug, n = f"{base}-{n}", n + 1
++    return slug
+diff --git a/tests/test_slugs.py b/tests/test_slugs.py
+index 97fe73a..d3bf361 100644
+--- a/tests/test_slugs.py
++++ b/tests/test_slugs.py
+@@ -1,5 +1,9 @@
+-from slugs import slugify
++from slugs import slugify, unique_slug
+ 
+ 
+ def test_slugify():
+     assert slugify("Hello, World!") == "hello-world"
++
++
++def test_unique_slug_skips_taken():
++    assert unique_slug("Hello", {"hello", "hello-2"}) == "hello-3"

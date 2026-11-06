@@ -1,0 +1,23 @@
+{
+  "id": "py-planted-counter",
+  "lang": "python",
+  "kind": "planted",
+  "expected": [
+    {
+      "rule": "PY-02",
+      "path": "wordstats.py",
+      "lines": [
+        8,
+        15
+      ]
+    },
+    {
+      "rule": "PY-04",
+      "path": "wordstats.py",
+      "lines": [
+        22,
+        26
+      ]
+    }
+  ]
+}
