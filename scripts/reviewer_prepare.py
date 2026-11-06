@@ -288,13 +288,18 @@ def _truncate(pack, budget):
     if _size(pack) <= budget:
         return pack
     pack["truncated"] = True
+    # Least useful first: the repo-wide name index, then callers (evenly across
+    # symbols), then the changed symbols themselves.
+    _fit_list(pack, "index", budget)
+    if _size(pack) <= budget:
+        return pack
     callers = {id(s): s["callers"] for s in pack["symbols"]}
-    for cap in range(MAX_CALLERS - 1, -1, -1):  # callers first, evenly across symbols
+    for cap in range(MAX_CALLERS - 1, -1, -1):
         for s in pack["symbols"]:
             s["callers"] = callers[id(s)][:cap]
         if _size(pack) <= budget:
             return pack
-    for key in ("index", "symbols", "dependencies"):
+    for key in ("symbols", "dependencies"):
         _fit_list(pack, key, budget)
         if _size(pack) <= budget:
             break

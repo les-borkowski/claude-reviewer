@@ -175,6 +175,22 @@ class ContextTest(unittest.TestCase):
             deps = build_context(self.repo, compute_scope(self.repo))["dependencies"]
         self.assertEqual(deps, ["pytest", "requests", "ruff", "uvicorn"])
 
+    def test_truncation_cuts_the_index_before_callers(self):
+        # Live run on a real repo: a 600-name index survived while every caller was cut.
+        git(self.repo, "checkout", "-q", "main")  # existing code, not part of the change
+        for i in range(200):
+            write(self.repo, f"lib{i}.py", f"def helper_{i}(x):\n    return x\n")
+        commit(self.repo, "a big repo")
+        git(self.repo, "checkout", "-q", "feat")
+        git(self.repo, "merge", "-q", "main")
+        write(self.repo, "util.py", "def slugify(text):\n    return text\n")
+        write(self.repo, "views.py", "from util import slugify\n\nslugify('a')\n")
+        pack = build_context(self.repo, compute_scope(self.repo), budget_chars=3000)
+        self.assertTrue(pack["truncated"])
+        sym = next(s for s in pack["symbols"] if s["name"] == "slugify")
+        self.assertEqual([c["path"] for c in sym["callers"]], ["views.py", "views.py"])
+        self.assertLess(len(pack["index"]), 200)
+
     def test_context_truncates_to_budget(self):
         for i in range(30):
             write(self.repo, f"m{i}.py", f"def func_{i}(x):\n    return x\n")

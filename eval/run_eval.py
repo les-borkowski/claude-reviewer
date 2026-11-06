@@ -94,7 +94,9 @@ def run_case(case_dir, plugin_dir):
         repo = materialise(case_dir, Path(tmp) / "repo")
         started = time.monotonic()
         cmd = ["claude", "-p", "/reviewer:review --all", "--plugin-dir", str(plugin_dir),
-               "--output-format", "json", "--allowedTools", *ALLOWED_TOOLS]
+               "--output-format", "json", "--allowedTools", *ALLOWED_TOOLS,
+               # a "plan" default (user or project settings) would refuse every write
+               "--permission-mode", "default"]
         try:
             proc = subprocess.run(cmd, cwd=repo, capture_output=True, text=True, timeout=TIMEOUT,
                                   stdin=subprocess.DEVNULL)
