@@ -31,6 +31,11 @@ class ScopeTest(unittest.TestCase):
         self.assertEqual(s["changed_lines"], 3)
         self.assertFalse(s["large"])
 
+    def test_user_diff_prefix_config_ignored(self):
+        git(self.repo, "config", "diff.noprefix", "true")
+        write(self.repo, "a.py", "a = 1\nb = 2\nc = 3\n")
+        self.assertEqual(list(self.files(self.scope())), ["a.py"])
+
     def test_uncommitted_and_untracked_included(self):
         write(self.repo, "a.py", "a = 1\nb = 3\n")
         write(self.repo, "b.ts", "export const x = 1;\nexport const y = 2;\n")

@@ -87,7 +87,8 @@ def merge(candidate_files, scope, rules, disabled):
             continue
         findings.append({**best, "id": f"f{len(findings) + 1}", "votes": len(g["finders"]),
                          "lenses": sorted(g["lenses"])})
-    return {"findings": findings, "dropped": dropped}
+    return {"findings": findings, "dropped": dropped,
+            "lenses": [lens for lens, _ in candidate_files]}
 
 
 def rank(findings, verdicts, cap):

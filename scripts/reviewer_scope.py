@@ -108,7 +108,7 @@ def compute_scope(repo, ref=None, full=False):
     branch = git(repo, "rev-parse", "--abbrev-ref", "HEAD").strip()
     base, base_kind = _base(repo, branch, ref, full)
     diff = git(repo, "-c", "core.quotePath=false", "diff", "--unified=0", "-M",
-               "--no-color", "--no-ext-diff", base)
+               "--no-color", "--no-ext-diff", "--src-prefix=a/", "--dst-prefix=b/", base)
     status = _name_status(repo, base)
     deleted = [path for letter, path in status if letter == "D"]
     ranges = _new_ranges(diff)

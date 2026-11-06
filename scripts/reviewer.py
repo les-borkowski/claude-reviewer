@@ -25,8 +25,8 @@ def print_json(data):
 
 
 def cmd_log_run(args):
-    run = read_json(args.run)
-    reviewer_log.append_records(args.repo, [run, *read_json(args.findings)])
+    reviewer_log.append_records(args.repo, reviewer_log.build_records(args.repo, args.run_dir,
+                                                                      args.run_id))
     return 0
 
 
@@ -88,8 +88,8 @@ def build_parser():
     for name in HANDLERS:
         subs[name] = sub.add_parser(name)
         subs[name].add_argument("--repo", type=Path, default=Path.cwd())
-    subs["log-run"].add_argument("--run", required=True)
-    subs["log-run"].add_argument("--findings", required=True)
+    subs["log-run"].add_argument("--run-id", required=True)
+    subs["log-run"].add_argument("--run-dir", type=Path, required=True)
     subs["acted-on"].add_argument("--run-id", required=True)
     subs["scope"].add_argument("--ref")
     subs["scope"].add_argument("--full", action="store_true")

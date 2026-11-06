@@ -108,38 +108,9 @@ Write the report from `ranked.json`, `merged.json`, `scope.json`,
 
 ## 7. Log
 
-Write `.reviewer/run/run.json`, one object:
-
-```json
-{"type": "run", "run_id": "<run_id>", "ts": "<ISO 8601 UTC>",
- "branch": "<scope.branch>", "head": "<scope.head>", "base": "<scope.base>",
- "base_kind": "<scope.base_kind>", "changed_lines": 0,
- "finders": 2, "lenses": ["reuse", "abstraction"],
- "tools": {"<tools.json tools>": "ran|missing|failed"}, "tool_hints": 0,
- "context_pack": {"symbols": 0, "truncated": false},
- "intent": ["<intent.json sources>"],
- "dropped": {"<every merged.json dropped key>": 0, "verifier": 0},
- "shown": 0, "coverage": {"tested": 0, "untested": 0, "unknown": 0}}
-```
-
-`tool_hints` = number of `tools.json` hints; `context_pack.symbols` = number
-of `context.json` symbols; `dropped.verifier` = `ranked.json`
-`dropped_by_verifier`; `shown` and `coverage` count the shown findings.
-
-Write `.reviewer/run/findings.json`, an array with one object per merged
-finding:
-
-```json
-{"type": "finding", "run_id": "<run_id>", "id": "f1", "rule": "PY-02",
- "path": "app/x.py", "lines": [40, 52], "source": "llm", "lenses": ["reuse"],
- "votes": 2, "kept": true, "shown": true, "reason": "<verdict reason>",
- "coverage": "tested"}
-```
-
-`kept` and `reason` come from the verdict (no verdict → `kept: false`,
-`reason: "no verdict"`), `shown` is whether it is in `ranked.json` `shown`,
-`coverage` is the verdict's label or `null`. Then:
+The CLI builds the run and finding records from the run files; do not write
+them yourself:
 
 ```bash
-python3 "${CLAUDE_PLUGIN_ROOT}/scripts/reviewer.py" log-run --repo . --run .reviewer/run/run.json --findings .reviewer/run/findings.json
+python3 "${CLAUDE_PLUGIN_ROOT}/scripts/reviewer.py" log-run --repo . --run-id <run_id> --run-dir .reviewer/run
 ```

@@ -39,6 +39,7 @@ class MergeTest(unittest.TestCase):
         f = out["findings"][0]
         self.assertEqual((f["id"], f["votes"], f["lenses"], f["lines_saved"], f["lines"]),
                          ("f1", 2, ["dead", "reuse"], 6, [45, 50]))
+        self.assertEqual(out["lenses"], ["reuse", "dead"])  # one per finder, for the run log
 
     def test_same_finder_twice_is_one_vote(self):
         out = self.run_merge(("reuse", [cand(lines=(40, 52)), cand(lines=(41, 44))]))
