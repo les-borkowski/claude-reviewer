@@ -34,7 +34,7 @@ def _load(path):
     except (OSError, ValueError):
         return [], 1
     if not isinstance(data, list):
-        return [], max(1, len(data)) if isinstance(data, dict) else 1
+        return [], 1
     return data, 0
 
 
@@ -91,13 +91,21 @@ def merge(candidate_files, scope, rules, disabled):
             "lenses": [lens for lens, _ in candidate_files]}
 
 
+def _confidence(value):
+    """The verifier's confidence as a float; 0 when it wrote something unreadable."""
+    try:
+        return float(value or 0)
+    except (TypeError, ValueError):
+        return 0.0
+
+
 def rank(findings, verdicts, cap):
     by_id = {v.get("id"): v for v in verdicts if isinstance(v, dict)}
     kept = []
     for f in findings:
         v = by_id.get(f["id"])
         if v and v.get("keep") is True:
-            confidence = float(v.get("confidence") or 0)
+            confidence = _confidence(v.get("confidence"))
             kept.append({**f, "confidence": confidence, "reason": v.get("reason", ""),
                          "coverage": v.get("coverage", "unknown"),
                          "score": f["lines_saved"] * confidence * f["votes"]})

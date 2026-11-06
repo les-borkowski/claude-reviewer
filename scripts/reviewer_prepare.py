@@ -7,6 +7,7 @@ import tempfile
 from pathlib import Path
 
 from reviewer_log import git
+from reviewer_scope import default_branch
 
 try:
     import tomllib
@@ -117,6 +118,8 @@ def _eslint(exe, repo, files):
                  "code": m.get("ruleId")} for f in data for m in f.get("messages", [])]
 
 
+# Whole-repo tools: unused-code and duplicate checks need the code around the change.
+WHOLE_REPO = {"vulture", "jscpd"}
 # name: (languages, ecosystem, adapter)
 TOOLS = {
     "vulture": ({"python"}, "python", _vulture),
@@ -145,6 +148,12 @@ def _executable(repo, name, ecosystem):
     return str(local) if local.exists() else shutil.which(name)
 
 
+def _source_files(repo, langs):
+    """Tracked and untracked, not ignored, source files of these languages."""
+    patterns = [p for lang in langs for p in EXTS[lang]]
+    return git(repo, "ls-files", "-co", "--exclude-standard", "--", *patterns).splitlines()
+
+
 def _ranges(scope):
     return {f["path"]: f["ranges"] for f in scope["files"]}
 
@@ -163,6 +172,8 @@ def run_tools(repo, scope):
         files = [f["path"] for f in scope["files"] if f["lang"] in tool_langs]
         if not files:
             continue
+        if name in WHOLE_REPO:  # hints are still filtered to changed lines below
+            files = _source_files(repo, tool_langs & langs)
         exe = _executable(repo, name, ecosystem)
         if exe is None:
             status[name] = "missing"
@@ -208,8 +219,7 @@ def _callers(repo, name, path, line):
 
 
 def _index(repo, langs):
-    patterns = [p for lang in langs for p in EXTS[lang]]
-    paths = git(repo, "ls-files", "-co", "--exclude-standard", "--", *patterns).splitlines()
+    paths = _source_files(repo, langs)
     index = []
     for path in paths:
         lang = next(l for l in langs if any(Path(path).match(p) for p in EXTS[l]))
@@ -312,9 +322,13 @@ def collect_intent(repo, scope):
     log = git(repo, "log", "--format=%B%x00", f"{scope['base']}..HEAD", check=False)
     commits = [m.strip() for m in log.split("\0") if m.strip()]
     slug = branch.rsplit("/", 1)[-1]
-    candidates = [p for pattern in ("docs/**/*plan*.md", "docs/superpowers/plans/*.md")
-                  for p in repo.glob(pattern) if slug in p.name]
-    candidates += repo.glob(f".scratch/{slug}/**/*.md")
+    default = default_branch(repo)
+    candidates = []
+    # On the default branch (or detached) the name says nothing about the task.
+    if branch != "HEAD" and (default is None or branch != default.removeprefix("origin/")):
+        candidates = [p for pattern in ("docs/**/*plan*.md", "docs/superpowers/plans/*.md")
+                      for p in repo.glob(pattern) if slug in p.name]
+        candidates += repo.glob(f".scratch/{slug}/**/*.md")
     plans, seen = [], set()
     for p in sorted(candidates):
         rel = p.relative_to(repo).as_posix()

@@ -65,21 +65,25 @@ def score(expected, shown):
 
 
 def summarise(results):
-    tp, fp, fn = (sum(r[k] for r in results) for k in ("tp", "fp", "fn"))
-    clean = [r for r in results if r["kind"] == "clean"]
+    """Scores over cases that ran; an errored case shows no findings, which would
+    otherwise score as a perfect clean case."""
+    ok = [r for r in results if not r.get("error")]
+    tp, fp, fn = (sum(r[k] for r in ok) for k in ("tp", "fp", "fn"))
+    clean = [r for r in ok if r["kind"] == "clean"]
     return {"precision": tp / (tp + fp) if tp + fp else None,
             "recall": tp / (tp + fn) if tp + fn else None,
             "fp_per_clean_case": sum(r["fp"] for r in clean) / len(clean) if clean else None,
-            "cases": len(results)}
+            "cases": len(ok), "errored": [r["id"] for r in results if r.get("error")]}
 
 
 def shown_findings(repo):
-    """Shown findings of the newest run in the repo's review log."""
+    """Shown findings of the newest run in the repo's review log; None if no run was logged."""
     records = read_records(repo)
     runs = [r["run_id"] for r in records if r.get("type") == "run"]
-    last = runs[-1] if runs else None
+    if not runs:
+        return None
     return [r for r in records if r.get("type") == "finding" and r.get("shown")
-            and (last is None or r.get("run_id") == last)]
+            and r.get("run_id") == runs[-1]]
 
 
 def run_case(case_dir, plugin_dir):
@@ -100,6 +104,8 @@ def run_case(case_dir, plugin_dir):
         except subprocess.TimeoutExpired:
             out, error = {}, f"timed out after {TIMEOUT}s"
         shown = shown_findings(repo)
+        if shown is None:
+            shown, error = [], error or "no review logged"
     return {"id": case["id"], "kind": case["kind"], "lang": case["lang"],
             **score(case["expected"], shown),
             "shown": [{k: f.get(k) for k in ("rule", "path", "lines")} for f in shown],
@@ -132,7 +138,8 @@ def main(argv=None):
     summary = summarise(results)
     print(f"\nprecision {_fmt(summary['precision'])}, recall {_fmt(summary['recall'])}, "
           f"false positives per clean case {_fmt(summary['fp_per_clean_case'])}, "
-          f"{summary['cases']} cases")
+          f"{summary['cases']} cases"
+          + (f"; errored, not scored: {', '.join(summary['errored'])}" if summary["errored"] else ""))
     RESULTS_DIR.mkdir(exist_ok=True)
     stamp = datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%SZ")
     out = RESULTS_DIR / f"{stamp}.json"

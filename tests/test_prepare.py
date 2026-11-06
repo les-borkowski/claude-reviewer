@@ -1,6 +1,7 @@
 import json
 import os
 import pathlib
+import shutil
 import sys
 import tempfile
 import unittest
@@ -26,6 +27,8 @@ class ToolsTest(unittest.TestCase):
     def setUp(self):
         self.repo = make_repo()
         self.bin = tempfile.mkdtemp()
+        # Only fake tools on PATH, plus git, which run_tools uses to list source files.
+        os.symlink(shutil.which("git"), pathlib.Path(self.bin) / "git")
         self.path_env = mock.patch.dict(os.environ, {"PATH": self.bin})
         self.path_env.start()
         self.addCleanup(self.path_env.stop)
@@ -75,6 +78,22 @@ dup = {"firstFile": {"name": "a.ts", "start": 3, "end": 9},
         self.assertEqual(out["tools"]["jscpd"], "ran")
         self.assertEqual([(h["rule"], h["path"], h["lines"]) for h in out["hints"]],
                          [("CM-09", "a.ts", [3, 9])])
+
+    def test_vulture_and_jscpd_see_the_whole_repo(self):
+        # Unused-code and duplicate checks are wrong when only changed files are passed:
+        # a new function called from unchanged code looks unused.
+        write(self.repo, "package.json", json.dumps({"devDependencies": {"jscpd": "^4"}}))
+        write(self.repo, "old.py", "def helper():\n    return 1\n")
+        write(self.repo, "a.py", "from old import helper\n")
+        commit(self.repo, "files")
+        args_log = pathlib.Path(self.bin) / "args.txt"
+        for name in ("vulture", "jscpd"):
+            fake_tool(self.bin, name, f"pathlib.Path({str(args_log)!r}).open('a')"
+                                      f".write({name!r} + ' ' + ' '.join(sys.argv[1:]) + '\\n')")
+        run_tools(self.repo, scope_for([{"path": "a.py", "lang": "python", "ranges": [[1, 1]]}]))
+        seen = {line.split()[0]: line.split()[1:] for line in args_log.read_text().splitlines()}
+        self.assertIn("old.py", seen["vulture"])
+        self.assertIn("old.py", seen["jscpd"])
 
     def test_node_tool_needs_package_json(self):
         fake_tool(self.bin, "jscpd", "sys.exit(0)")
@@ -190,6 +209,14 @@ class IntentTest(unittest.TestCase):
         intent = collect_intent(self.repo, compute_scope(self.repo))
         self.assertEqual(intent["sources"], ["plan"])
         self.assertEqual(len(intent["plans"][0]["text"]), 20000)
+
+    def test_no_plan_lookup_on_default_branch(self):
+        # On main the branch name says nothing about the task; "main" would match
+        # any plan with "main" in its name.
+        git(self.repo, "checkout", "-q", "main")
+        write(self.repo, "docs/domain-plan.md", "# Unrelated\n")
+        intent = collect_intent(self.repo, compute_scope(self.repo))
+        self.assertEqual(intent["plans"], [])
 
     def test_intent_none_found(self):
         intent = collect_intent(self.repo, compute_scope(self.repo))

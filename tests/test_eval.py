@@ -65,13 +65,21 @@ class EvalTest(unittest.TestCase):
         self.assertEqual(out["fp_per_clean_case"], 2.0)
         self.assertEqual(out["precision"], 0.0)
         self.assertIsNone(out["recall"])
-        self.assertEqual(out["cases"], 1)
+        self.assertEqual((out["cases"], out["errored"]), (1, []))
 
     def test_summarise_precision_recall(self):
         out = run_eval.summarise([{"id": "p", "kind": "planted", "tp": 1, "fp": 1, "fn": 1},
                                   {"id": "q", "kind": "planted", "tp": 0, "fp": 0, "fn": 0}])
         self.assertEqual((out["precision"], out["recall"]), (0.5, 0.5))
         self.assertIsNone(out["fp_per_clean_case"])
+
+    def test_summarise_leaves_out_errored_cases(self):
+        out = run_eval.summarise([{"id": "c", "kind": "clean", "tp": 0, "fp": 0, "fn": 0,
+                                   "error": "no review logged"},
+                                  {"id": "p", "kind": "planted", "tp": 1, "fp": 1, "fn": 0}])
+        self.assertEqual((out["cases"], out["errored"]), (1, ["c"]))
+        self.assertEqual(out["precision"], 0.5)
+        self.assertIsNone(out["fp_per_clean_case"])  # the only clean case errored
 
     def test_no_claude_exits_2(self):
         with tempfile.TemporaryDirectory() as empty, \
@@ -90,6 +98,10 @@ class EvalTest(unittest.TestCase):
                 {"type": "finding", "run_id": "r1", "id": "f2", "shown": False, **f("PY-04", "a.py", [3, 4])},
             ]) + "\n")
             self.assertEqual([x["id"] for x in run_eval.shown_findings(Path(tmp))], ["f1"])
+
+    def test_shown_findings_none_without_a_run(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            self.assertIsNone(run_eval.shown_findings(Path(tmp)))
 
 
 if __name__ == "__main__":

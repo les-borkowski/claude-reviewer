@@ -59,9 +59,9 @@ class MergeTest(unittest.TestCase):
         self.assertEqual(len(out["findings"]), 1)
         self.assertEqual(out["dropped"]["missing_fields"], 1)
 
-    def test_non_list_file_counts_its_candidates(self):
-        out = self.run_merge(("reuse", {"candidates": []}), ("dead", [cand(), "junk"]))
-        self.assertEqual(out["dropped"]["missing_fields"], 2)
+    def test_non_list_file_counts_once(self):
+        out = self.run_merge(("reuse", {"candidates": [], "note": "x"}), ("dead", [cand(), "junk"]))
+        self.assertEqual(out["dropped"]["missing_fields"], 2)  # 1 for the file, 1 for "junk"
 
     def test_drops_unknown_rule(self):
         out = self.run_merge(("reuse", [cand(rule="ZZ-99")]))
@@ -116,6 +116,14 @@ class RankTest(unittest.TestCase):
         verdicts = [{"id": "f10", "keep": True, "confidence": 1}, {"id": "f2", "keep": True,
                                                                    "confidence": 1}]
         self.assertEqual([f["id"] for f in rank(findings, verdicts, 5)["shown"]], ["f2", "f10"])
+
+    def test_rank_unreadable_confidence_scores_zero(self):
+        findings = [finding(1, 4), finding(2, 4)]
+        verdicts = [{"id": "f1", "keep": True, "confidence": "high"},
+                    {"id": "f2", "keep": True, "confidence": 0.5}]
+        out = rank(findings, verdicts, 5)
+        self.assertEqual([(f["id"], f["confidence"]) for f in out["shown"]],
+                         [("f2", 0.5), ("f1", 0.0)])
 
     def test_rank_missing_verdict_is_dropped(self):
         findings = [finding(1, 4), finding(2, 4), finding(3, 4)]

@@ -28,7 +28,7 @@ def _sha(repo, rev):
     return git(repo, "rev-parse", "--verify", "--quiet", f"{rev}^{{commit}}").strip()
 
 
-def _default_branch(repo):
+def default_branch(repo):
     target = git(repo, "symbolic-ref", "--quiet", "refs/remotes/origin/HEAD", check=False).strip()
     candidates = [target.removeprefix("refs/remotes/")] if target else []
     for name in [*candidates, "main", "master"]:
@@ -46,7 +46,7 @@ def _base(repo, branch, ref, full):
     last = None if full else last_review(repo, branch)
     if last and last.get("head") and _ok(repo, "merge-base", "--is-ancestor", last["head"], "HEAD"):
         return last["head"], "last_review"
-    default = _default_branch(repo)
+    default = default_branch(repo)
     if default is None:
         raise NoBase(NO_BASE)
     if branch == default.removeprefix("origin/"):
