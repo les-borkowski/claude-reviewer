@@ -1,24 +1,16 @@
 """Append-only review log (.reviewer/log.jsonl) and acted-on detection."""
 import json
-import re
 import subprocess
 from collections import Counter
 from datetime import datetime, timezone
 from pathlib import Path
 
-HUNK = re.compile(r"^@@ -(\d+)(?:,(\d+))? \+(\d+)(?:,(\d+))? @@", re.M)
 
 
 def git(repo, *args, check=True):
     """Run git in `repo` and return stdout; raises CalledProcessError if check."""
     return subprocess.run(["git", *args], cwd=repo, check=check,
                           capture_output=True, text=True).stdout
-
-
-def hunks(diff_text):
-    """(old_start, old_count, new_start, new_count) per `@@` header of a --unified=0 diff."""
-    return [(int(a), int(b or 1), int(c), int(d or 1))
-            for a, b, c, d in HUNK.findall(diff_text)]
 
 
 def log_path(repo):
@@ -61,22 +53,30 @@ def last_review(repo, branch):
     return runs[-1] if runs else None
 
 
-def _normalised(text):
-    return "\n".join(line.strip() for line in text.splitlines())
+def _file_lines(repo, path):
+    """The file's lines, whitespace-trimmed; None if the file is gone."""
+    try:
+        return [line.strip() for line in (Path(repo) / path).read_text(errors="replace").splitlines()]
+    except OSError:
+        return None
 
 
 def flagged_text(repo, path, lines):
     """The flagged lines as they are now, whitespace-trimmed; None if the file is gone."""
-    try:
-        text = (Path(repo) / path).read_text(errors="replace")
-    except OSError:
-        return None
+    file_lines = _file_lines(repo, path)
     start, end = lines
-    return _normalised("\n".join(text.splitlines()[start - 1:end]))
+    return None if file_lines is None else "\n".join(file_lines[start - 1:end])
+
+
+def occurrences(text, file_lines):
+    """How many times the block `text` appears as whole consecutive lines."""
+    block = text.split("\n")
+    k = len(block)
+    return sum(file_lines[i:i + k] == block for i in range(len(file_lines) - k + 1))
 
 
 def detect_acted_on(repo, current_run_id):
-    """Shown findings whose flagged text no longer appears, as whole lines, in their file."""
+    """Shown findings with fewer copies of their flagged text than when they were logged."""
     records = read_records(repo)
     done = {(r.get("run_id"), r.get("id")) for r in records if r.get("type") == "acted_on"}
     found = []
@@ -85,11 +85,8 @@ def detect_acted_on(repo, current_run_id):
         if rec.get("type") != "finding" or not rec.get("shown") or key in done \
                 or not rec.get("text"):
             continue
-        try:
-            current = _normalised((Path(repo) / rec["path"]).read_text(errors="replace"))
-        except OSError:
-            current = None  # file deleted: the flagged code is gone
-        if current is None or f"\n{rec['text']}\n" not in f"\n{current}\n":
+        file_lines = _file_lines(repo, rec["path"])  # None: file deleted, the code is gone
+        if file_lines is None or occurrences(rec["text"], file_lines) < rec.get("text_count", 1):
             found.append({"type": "acted_on", "run_id": rec["run_id"], "id": rec["id"],
                           "detected_in": current_run_id})
             done.add(key)
@@ -131,11 +128,14 @@ def build_records(repo, run_dir, run_id):
     for f in merged.get("findings", []):
         v = verdicts.get(f["id"], {})
         kept = v.get("keep") is True
+        text = flagged_text(repo, f["path"], f["lines"])
+        count = occurrences(text, _file_lines(repo, f["path"])) if text else 0
         findings.append({"type": "finding", "run_id": run_id,
                          **{k: f.get(k) for k in ("id", "rule", "path", "lines", "source",
                                                   "lenses", "votes")},
                          "kept": kept, "shown": f["id"] in shown,
                          "reason": v.get("reason", "no verdict"),
                          "coverage": v.get("coverage") if kept else None,
-                         "text": flagged_text(repo, f["path"], f["lines"])})
+                         # several copies (e.g. a CM-09 duplicate): acted on once one goes
+                         "text": text, "text_count": count})
     return [run, *findings]

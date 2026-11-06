@@ -1,5 +1,6 @@
 import os
 import unittest
+from unittest import mock
 
 import reviewer_log as rl
 from reviewer_scope import compute_scope
@@ -43,6 +44,16 @@ class ScopeTest(unittest.TestCase):
         self.assertEqual(files["a.py"]["ranges"], [[2, 2]])
         self.assertEqual(files["b.ts"]["lang"], "typescript-react")
         self.assertEqual(files["b.ts"]["ranges"], [[1, 2]])
+
+    def test_untracked_link_to_folder_is_skipped(self):
+        target = self.repo.parent / (self.repo.name + "-shared")
+        target.mkdir()
+        os.symlink(target, self.repo / "shared")
+        write(self.repo, "dump.sql", "big\n")
+        with mock.patch("pathlib.Path.read_bytes", side_effect=AssertionError("read")):
+            s = self.scope()  # unsupported files are never read just to count lines
+        self.assertEqual(s["files"], [])
+        self.assertTrue({"shared", "dump.sql"} <= set(s["skipped"]))
 
     def test_nothing_to_review(self):
         s = self.scope()
@@ -104,6 +115,31 @@ class ScopeTest(unittest.TestCase):
         full = self.scope(full=True)
         self.assertEqual(full["base_kind"], "merge_base")
         self.assertEqual(full["files"][0]["ranges"], [[3, 4]])
+
+    def test_merging_main_does_not_pull_its_files_into_review(self):
+        write(self.repo, "a.py", "a = 1\nb = 2\nc = 3\n")
+        first = commit(self.repo, "feat work")
+        rl.append_records(self.repo, [{"type": "run", "run_id": "r1", "branch": "feat",
+                                       "head": first}])
+        git(self.repo, "checkout", "-q", "main")
+        write(self.repo, "other.py", "x = 1\n")
+        commit(self.repo, "teammate's work")
+        git(self.repo, "checkout", "-q", "feat")
+        git(self.repo, "merge", "-q", "--no-edit", "main")
+        s = self.scope()
+        self.assertEqual(s["base_kind"], "merge_base")
+        self.assertEqual(list(self.files(s)), ["a.py"])
+
+    def test_incremental_on_default_branch(self):
+        git(self.repo, "checkout", "-q", "main")
+        write(self.repo, "a.py", "a = 1\nb = 2\nc = 3\n")
+        first = commit(self.repo, "first")
+        rl.append_records(self.repo, [{"type": "run", "run_id": "r1", "branch": "main",
+                                       "head": first}])
+        write(self.repo, "a.py", "a = 1\nb = 2\nc = 3\nd = 4\n")
+        commit(self.repo, "second")
+        s = self.scope()
+        self.assertEqual((s["base_kind"], s["files"][0]["ranges"]), ("last_review", [[4, 4]]))
 
     def test_last_review_not_ancestor_falls_back(self):
         write(self.repo, "a.py", "a = 1\nb = 2\nc = 3\n")

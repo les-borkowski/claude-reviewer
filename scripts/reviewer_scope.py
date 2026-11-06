@@ -4,7 +4,7 @@ import re
 import subprocess
 from pathlib import Path
 
-from reviewer_log import git, hunks, last_review
+from reviewer_log import git, last_review
 
 NO_BASE = "no base found; pass a ref: /reviewer:review <ref>"
 LARGE_DIFF = 400
@@ -14,6 +14,13 @@ SKIP_GLOBS = ["*.lock", "package-lock.json", "pnpm-lock.yaml", "yarn.lock", "uv.
               "*/node_modules/*", "*/generated/*", "*.min.js", "*.d.ts"]
 KEEP = re.compile(r"reviewer:\s*keep\s+([A-Z]{2}-\d{2})\s+(\S.*)")
 COMMENT_CLOSE = re.compile(r"\s*(\*/\}?|-->)\s*$")
+HUNK = re.compile(r"^@@ -(\d+)(?:,(\d+))? \+(\d+)(?:,(\d+))? @@", re.M)
+
+
+def hunks(diff_text):
+    """(old_start, old_count, new_start, new_count) per `@@` header of a --unified=0 diff."""
+    return [(int(a), int(b or 1), int(c), int(d or 1))
+            for a, b, c, d in HUNK.findall(diff_text)]
 
 
 class NoBase(Exception):
@@ -43,13 +50,19 @@ def _base(repo, branch, ref, full):
             return _sha(repo, ref), "ref"
         except subprocess.CalledProcessError:
             raise NoBase(f"unknown ref: {ref}") from None
+    default = default_branch(repo)
+    on_default = default is not None and branch == default.removeprefix("origin/")
     last = None if full else last_review(repo, branch)
     if last and last.get("head") and _ok(repo, "merge-base", "--is-ancestor", last["head"], "HEAD"):
-        return last["head"], "last_review"
-    default = default_branch(repo)
+        # After merging the default branch in, the last review predates the merge
+        # and diffing from it would pull in everything the merge brought.
+        if on_default or default is None or _ok(
+                repo, "merge-base", "--is-ancestor",
+                git(repo, "merge-base", "HEAD", default).strip(), last["head"]):
+            return last["head"], "last_review"
     if default is None:
         raise NoBase(NO_BASE)
-    if branch == default.removeprefix("origin/"):
+    if on_default:
         return _sha(repo, "HEAD"), "merge_base"
     return git(repo, "merge-base", "HEAD", default).strip(), "merge_base"
 
@@ -57,7 +70,7 @@ def _base(repo, branch, ref, full):
 def _skip_reason(repo, path):
     if any(fnmatch.fnmatchcase("/" + path, g if "/" in g else "*/" + g) for g in SKIP_GLOBS):
         return "skip"
-    if Path(path).suffix not in LANGS:
+    if Path(path).suffix not in LANGS or not (Path(repo) / path).is_file():
         return "unsupported"
     with open(Path(repo) / path, "rb") as f:
         if b"\0" in f.read(8000):  # git's own binary heuristic
@@ -114,6 +127,9 @@ def compute_scope(repo, ref=None, full=False):
     ranges = _new_ranges(diff)
     untracked = git(repo, "ls-files", "--others", "--exclude-standard", "-z").split("\0")
     for path in filter(None, untracked):
+        if not (repo / path).is_file() or Path(path).suffix not in LANGS:
+            ranges[path] = []  # listed as skipped below; never read
+            continue
         count = len((repo / path).read_bytes().splitlines())
         ranges[path] = [[1, count]] if count else []
 

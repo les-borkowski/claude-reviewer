@@ -87,6 +87,20 @@ class ActedOnTest(unittest.TestCase):
         commit(self.repo, "simplify new.py")
         self.assertEqual([f["id"] for f in rl.detect_acted_on(self.repo, "r2")], ["f2"])
 
+    def test_removing_one_of_two_copies_is_acted_on(self):
+        block = "total = 0\nfor x in xs:\n    total += x\n"
+        write(self.repo, "dup.py", block + "\n" + block)
+        rl.append_records(self.repo, [{**finding_rec("r1", "f3", "dup.py", [5, 7],
+                                                     rl.flagged_text(self.repo, "dup.py", [5, 7])),
+                                       "text_count": 2}])
+        self.assertEqual(rl.detect_acted_on(self.repo, "r2"), [])  # both copies still there
+        write(self.repo, "dup.py", block)
+        self.assertEqual([f["id"] for f in rl.detect_acted_on(self.repo, "r3")], ["f3"])
+
+    def test_occurrences_counts_adjacent_copies(self):
+        self.assertEqual(rl.occurrences("x = 1", ["x = 1", "x = 1", "y"]), 2)
+        self.assertEqual(rl.occurrences("a\nb", ["a", "b", "a", "b"]), 2)
+
     def test_acted_on_reported_once(self):
         self.edit_line(6)
         rl.append_records(self.repo, [{"type": "acted_on", "run_id": "r1", "id": "f1",
@@ -158,6 +172,7 @@ class BuildRecordsTest(unittest.TestCase):
                           ("f3", False, False, "no verdict", None)])
         self.assertEqual(records[0]["text"], "line 5\nline 6\nline 7\nline 8")
         self.assertEqual(records[0]["votes"], 2)
+        self.assertEqual(records[0]["text_count"], 1)
 
     def test_no_findings_means_no_ranking_files(self):
         (self.run_dir / "verdicts.json").unlink()
