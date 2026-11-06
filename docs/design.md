@@ -297,6 +297,21 @@ numbers from Read, not from counting in the patch; a case's expected `rule`
 may list equivalent ids (the wrapper case accepts RE-04 or CM-03). Re-scored
 with that last change only, the same run gives precision 0.92 and recall 0.85.
 
+Rerun of the five affected cases after those fixes
+(`eval/results/20261106T104629Z.json`, $3.00): all four planted cases found,
+the timed-out case finished in 102 s. Combined with the rest of the baseline:
+**precision 0.93, recall 1.00, 0.08 false positives per clean case** (14 true
+positives, 1 false positive, 0 misses, 26 cases). The one false positive is
+the asyncpg URL case, flagged the same way twice (CM-04, SQLAlchemy's
+`make_url`): a defensible suggestion, so the case's "clean" label is the open
+question, not the reviewer.
+
+Live review of simple-project-tool `925ec0b` ("Add read-only demo accounts",
+359 changed lines, 26 files, 5 finders, $1.38): "Looks lean. Ship." — fair;
+the repeated `require_not_demo(user)` lines call one shared helper, as the
+project's CLAUDE.md asks. It exposed one bug, fixed since: at the 60k budget
+the context pack kept the 608-name index and cut every caller.
+
 ## Plugin layout
 
 ```
