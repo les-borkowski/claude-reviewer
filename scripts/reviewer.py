@@ -46,6 +46,11 @@ def cmd_scope(args):
     return 0
 
 
+def cmd_diff(args):
+    sys.stdout.write(reviewer_scope.diff_text(args.repo, read_json(args.scope)))
+    return 0
+
+
 def cmd_merge(args):
     config = Path(args.repo) / ".reviewer" / "config.json"
     disabled = set(read_json(config).get("disabled_rules", [])) if config.exists() else set()
@@ -75,6 +80,7 @@ def cmd_stats(args):
 
 
 HANDLERS = {"log-run": cmd_log_run, "acted-on": cmd_acted_on, "scope": cmd_scope,
+            "diff": cmd_diff,
             "merge": cmd_merge, "rank": cmd_rank,
             "tools": prepare_cmd(reviewer_prepare.run_tools),
             "context": prepare_cmd(reviewer_prepare.build_context),
@@ -99,7 +105,7 @@ def build_parser():
     subs["rank"].add_argument("--merged", required=True)
     subs["rank"].add_argument("--verdicts", required=True)
     subs["rank"].add_argument("--all", action="store_true")
-    for name in ("tools", "context", "intent"):
+    for name in ("diff", "tools", "context", "intent"):
         subs[name].add_argument("--scope", required=True)
     subs["stats"].add_argument("--last", type=int, default=20)
     return parser

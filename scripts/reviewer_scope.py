@@ -116,6 +116,19 @@ def _keep_markers(repo, path):
     return markers
 
 
+def diff_text(repo, scope):
+    """The change as one patch: tracked edits against the base, untracked files as new."""
+    paths = [f["path"] for f in scope["files"]]
+    if not paths:
+        return ""
+    opts = ["--no-color", "--no-ext-diff", "--src-prefix=a/", "--dst-prefix=b/"]
+    out = git(repo, "-c", "core.quotePath=false", "diff", "-M", *opts, scope["base"], "--", *paths)
+    untracked = git(repo, "ls-files", "--others", "--exclude-standard", "-z", "--", *paths)
+    for path in filter(None, untracked.split("\0")):
+        out += git(repo, "diff", "--no-index", *opts, "--", "/dev/null", path, check=False)
+    return out
+
+
 def compute_scope(repo, ref=None, full=False):
     repo = Path(repo)
     branch = git(repo, "rev-parse", "--abbrev-ref", "HEAD").strip()

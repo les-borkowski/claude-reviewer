@@ -60,6 +60,7 @@ the heading `# Repo docs (these win over the rules above on conflict)`.
 Then:
 
 ```bash
+python3 "${CLAUDE_PLUGIN_ROOT}/scripts/reviewer.py" diff --repo . --scope .reviewer/run/scope.json > .reviewer/run/diff.patch
 python3 "${CLAUDE_PLUGIN_ROOT}/scripts/reviewer.py" tools --repo . --scope .reviewer/run/scope.json > .reviewer/run/tools.json
 python3 "${CLAUDE_PLUGIN_ROOT}/scripts/reviewer.py" context --repo . --scope .reviewer/run/scope.json > .reviewer/run/context.json
 python3 "${CLAUDE_PLUGIN_ROOT}/scripts/reviewer.py" intent --repo . --scope .reviewer/run/scope.json > .reviewer/run/intent.json
@@ -75,7 +76,8 @@ python3 "${CLAUDE_PLUGIN_ROOT}/scripts/reviewer.py" intent --repo . --scope .rev
 
 Dispatch all finders **in one message, in parallel**, as `reviewer:finder`
 agents. Each prompt gives: the run directory `.reviewer/run/` and its files
-(`scope.json`, `standards.md`, `context.json`, `intent.json`, `tools.json`),
+(`diff.patch`, `scope.json`, `standards.md`, `context.json`, `intent.json`,
+`tools.json`),
 the `base` sha, its lens id, its file order, and its output path
 `.reviewer/run/finder-<n>.json`.
 
@@ -92,7 +94,7 @@ ranking (`shown` and `kept` empty, `dropped_by_verifier` 0) and go to step 6.
 ## 4. Verify
 
 Dispatch one `reviewer:verifier` agent. Its prompt gives the run directory and
-files (`merged.json`, `scope.json`, `standards.md`, `context.json`,
+files (`merged.json`, `diff.patch`, `scope.json`, `standards.md`, `context.json`,
 `intent.json`, `tools.json`) and the output path `.reviewer/run/verdicts.json`.
 Then:
 

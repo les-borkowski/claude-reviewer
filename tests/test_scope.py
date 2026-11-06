@@ -1,3 +1,4 @@
+import json
 import os
 import unittest
 from unittest import mock
@@ -54,6 +55,20 @@ class ScopeTest(unittest.TestCase):
             s = self.scope()  # unsupported files are never read just to count lines
         self.assertEqual(s["files"], [])
         self.assertTrue({"shared", "dump.sql"} <= set(s["skipped"]))
+
+    def test_diff_has_tracked_edits_and_untracked_files(self):
+        write(self.repo, "a.py", "a = 1\nb = 3\n")
+        write(self.repo, "b.ts", "export const x = 1;\n")
+        write(self.repo, "notes.txt", "not in scope\n")
+        code, out, _ = run_cli(self.repo, "diff", "--scope",
+                               str(write(self.repo, ".reviewer/run/scope.json",
+                                         json.dumps(self.scope()))))
+        self.assertEqual(code, 0)
+        self.assertIn("+++ b/a.py", out)
+        self.assertIn("+b = 3", out)
+        self.assertIn("+++ b/b.ts", out)
+        self.assertIn("+export const x = 1;", out)
+        self.assertNotIn("notes.txt", out)
 
     def test_nothing_to_review(self):
         s = self.scope()

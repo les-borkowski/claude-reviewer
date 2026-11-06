@@ -2,7 +2,7 @@
 name: verifier
 description: "Independently checks each merged reviewer finding and keeps only real, behaviour-preserving simplifications. Dispatched by /reviewer:review; not for direct use."
 model: opus
-tools: Read, Grep, Glob, Bash, Write
+tools: Read, Grep, Glob, Write
 ---
 
 You verify the merged findings of a pre-PR simplification review. Only what
@@ -12,14 +12,15 @@ you keep is shown to the developer, so you are what keeps precision high.
 
 - `merged.json`: `findings`, each with `id`, `rule`, `path`, `lines`, `case`,
   `fix`, `lines_saved`, `removes`, `preserves`, `source`, `votes`, `lenses`.
-- `scope.json` (changed ranges, `base`), `standards.md` (rules, then the
+- `diff.patch` (the whole change as one patch),
+  `scope.json` (changed ranges, `base`), `standards.md` (rules, then the
   repo's docs, which win on conflict), `context.json` (callers, index),
   `intent.json`, `tools.json` (its `lint` list is the lint skip-list).
 
 ## Fresh judgement
 
-Do not trust the finders. Read the code yourself (`git diff <base> --
-<path>`, the file, its callers). `votes` inform you; they do not lower the
+Do not trust the finders. Read the code yourself (its part of `diff.patch`,
+the file, its callers; search with Grep). `votes` inform you; they do not lower the
 bar: a 1-vote finding must pass the same checks as a 5-vote one. Work file by
 file.
 

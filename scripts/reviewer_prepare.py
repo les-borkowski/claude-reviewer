@@ -241,8 +241,10 @@ def _pyproject_specs(text):
         # shortcut: Python 3.10 has no tomllib; pull quoted strings out of the
         # `dependencies = [...]` arrays and [dependency-groups] arrays by regex.
         groups = re.search(r"^\[dependency-groups\]\s*$(.*?)(?=^\[|\Z)", text, re.M | re.S)
-        arrays = re.findall(r"^dependencies\s*=\s*\[(.*?)\]", text, re.M | re.S)
-        arrays += re.findall(r"=\s*\[(.*?)\]", groups.group(1), re.S) if groups else []
+        # An array ends at a `]` closing its line, not at the `]` of an extra
+        # like "uvicorn[standard]".
+        arrays = re.findall(r"^dependencies\s*=\s*\[(.*?)\]\s*$", text, re.M | re.S)
+        arrays += re.findall(r"=\s*\[(.*?)\]\s*$", groups.group(1), re.M | re.S) if groups else []
         return [s for a in arrays for s in re.findall(r'"([^"]+)"', re.sub(r"\{.*?\}", "", a))]
     data = tomllib.loads(text)
     specs = list(data.get("project", {}).get("dependencies", []))

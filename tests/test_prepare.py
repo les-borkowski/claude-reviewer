@@ -168,12 +168,12 @@ class ContextTest(unittest.TestCase):
                                        "vitest", "guava"]))
 
     def test_pyproject_without_tomllib(self):
-        write(self.repo, "pyproject.toml", '[project]\ndependencies = ["requests>=2"]\n\n'
+        write(self.repo, "pyproject.toml", '[project]\ndependencies = ["uvicorn[standard]", "requests>=2"]\n\n'
               '[dependency-groups]\ndev = ["pytest", {include-group = "lint"}]\nlint = ["ruff"]\n')
         write(self.repo, "a.py", "x = 1\n")
         with mock.patch("reviewer_prepare.tomllib", None):
             deps = build_context(self.repo, compute_scope(self.repo))["dependencies"]
-        self.assertEqual(deps, ["pytest", "requests", "ruff"])
+        self.assertEqual(deps, ["pytest", "requests", "ruff", "uvicorn"])
 
     def test_context_truncates_to_budget(self):
         for i in range(30):

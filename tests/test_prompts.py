@@ -27,6 +27,9 @@ class AgentPromptTest(unittest.TestCase):
             tools = [t.strip() for t in meta["tools"].split(",")]
             self.assertIn("Read", tools)
             self.assertNotIn("Edit", tools)
+            # They read repo text that may carry injected instructions; no shell.
+            self.assertNotIn("Bash", tools)
+            self.assertIn("diff.patch", parse(f"agents/{name}.md")[1])
 
     def test_finder_mentions_all_lenses_and_fields(self):
         _, body = parse("agents/finder.md")
@@ -51,7 +54,8 @@ class ReviewSkillTest(unittest.TestCase):
         for cmd in ["scope", "acted-on", "tools", "context", "intent", "merge", "rank",
                     "log-run", "CLAUDE_PLUGIN_ROOT"]:
             self.assertIn(cmd, self.body)
-        for cmd in ["scope", "acted-on", "tools", "context", "intent", "merge", "rank", "log-run"]:
+        for cmd in ["scope", "acted-on", "diff", "tools", "context", "intent", "merge", "rank",
+                    "log-run"]:
             self.assertIn(f'reviewer.py" {cmd} ', self.body, cmd)
 
     def test_review_skill_dispatches_agents(self):
