@@ -20,8 +20,11 @@ def f(rule, path, lines):
 
 
 class EvalTest(unittest.TestCase):
-    def test_six_seed_cases(self):
-        self.assertEqual(len(CASES), 6)
+    def test_every_language_has_planted_and_clean_cases(self):
+        kinds = {(json.loads((c / "case.json").read_text())["lang"],
+                  json.loads((c / "case.json").read_text())["kind"]) for c in CASES}
+        for lang in ("python", "java", "typescript-react"):
+            self.assertTrue({(lang, "planted"), (lang, "clean")} <= kinds, lang)
 
     def test_materialise_applies_patch(self):
         for case in CASES:

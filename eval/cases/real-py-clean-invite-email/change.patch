@@ -1,0 +1,41 @@
+diff --git a/backend/app/api/routes/invitations.py b/backend/app/api/routes/invitations.py
+index f985959..69b8e80 100644
+--- a/backend/app/api/routes/invitations.py
++++ b/backend/app/api/routes/invitations.py
+@@ -1,11 +1,12 @@
+ import uuid
+ 
+-from fastapi import APIRouter, Depends
++from fastapi import APIRouter, BackgroundTasks, Depends
+ from sqlalchemy.ext.asyncio import AsyncSession
+ 
+ from app.api.schemas.invitation import InvitationCreate, InvitationResponse
+ from app.api.services import invitation_service
+ from app.auth.dependencies import get_current_user
++from app.core.email import send_invitation_email
+ from app.db.database import get_db
+ from app.db.models import User
+ 
+@@ -30,11 +31,20 @@ async def list_project_invitations(
+ async def create_invitation(
+     project_id: uuid.UUID,
+     data: InvitationCreate,
++    background_tasks: BackgroundTasks,
+     user: User = Depends(get_current_user),
+     db: AsyncSession = Depends(get_db),
+ ):
+-    """Create an invitation."""
+-    return await invitation_service.create_invitation(project_id, data, user, db)
++    """Create an invitation. Sends notification email to the invitee."""
++    inv = await invitation_service.create_invitation(project_id, data, user, db)
++    background_tasks.add_task(
++        send_invitation_email,
++        inv.invitee_email,
++        inv.inviter_name,
++        inv.project_name,
++        inv.role.value,
++    )
++    return inv
+ 
+ 
+ @router.delete("/invitations/{invitation_id}", status_code=204)

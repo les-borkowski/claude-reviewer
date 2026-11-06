@@ -1,0 +1,15 @@
+{
+  "id": "real-py-planted-reraise",
+  "lang": "python",
+  "kind": "planted",
+  "expected": [
+    {
+      "rule": "CM-07",
+      "path": "backend/app/api/services/task_service.py",
+      "lines": [
+        243,
+        246
+      ]
+    }
+  ]
+}

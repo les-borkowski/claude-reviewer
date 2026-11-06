@@ -1,0 +1,51 @@
+diff --git a/frontend/src/context/AuthContext.tsx b/frontend/src/context/AuthContext.tsx
+index 5eefd47..08969cf 100644
+--- a/frontend/src/context/AuthContext.tsx
++++ b/frontend/src/context/AuthContext.tsx
+@@ -51,6 +51,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
+   // Keep a ref so interceptors always see the latest token without stale closure
+   const accessTokenRef = useRef<string | null>(null)
+ 
++  // Deduplicates concurrent refresh calls — all in-flight 401s share one promise
++  const pendingRefreshRef = useRef<Promise<string | null> | null>(null)
++
+   function setAccessToken(token: string | null) {
+     accessTokenRef.current = token
+     setState((s) => ({ ...s, accessToken: token }))
+@@ -70,19 +73,23 @@ export function AuthProvider({ children }: { children: ReactNode }) {
+     return user
+   }
+ 
+-  const refreshToken = async (): Promise<string | null> => {
+-    const stored = localStorage.getItem(REFRESH_TOKEN_KEY)
+-    if (!stored) return null
+-    try {
+-      const res = await authApi.refresh(stored)
+-      const newToken = res.data.access_token
+-      setAccessToken(newToken)
+-      return newToken
+-    } catch {
+-      localStorage.removeItem(REFRESH_TOKEN_KEY)
+-      setState({ user: null, accessToken: null, isAuthenticated: false, isLoading: false })
+-      return null
+-    }
++  const refreshToken = (): Promise<string | null> => {
++    if (pendingRefreshRef.current) return pendingRefreshRef.current
++    pendingRefreshRef.current = (async () => {
++      const stored = localStorage.getItem(REFRESH_TOKEN_KEY)
++      if (!stored) return null
++      try {
++        const res = await authApi.refresh(stored)
++        const newToken = res.data.access_token
++        setAccessToken(newToken)
++        return newToken
++      } catch {
++        localStorage.removeItem(REFRESH_TOKEN_KEY)
++        setState({ user: null, accessToken: null, isAuthenticated: false, isLoading: false })
++        return null
++      }
++    })().finally(() => { pendingRefreshRef.current = null })
++    return pendingRefreshRef.current
+   }
+ 
+   // Wire up interceptor accessors once

@@ -64,3 +64,18 @@ eval/cases/<id>/
 Real cases from your own repos (e.g. AI-written commits) are added the same
 way: the parent commit's relevant files go in `before/`, the commit's diff in
 `change.patch`.
+
+## The `real-*` cases
+
+Twenty cases (`real-py-*`, `real-ts-*`) come from simple-project-tool
+commits, which are mostly AI-written. `before/` holds only the files the
+commit touched, whole, at the parent commit, so callers elsewhere in that repo
+are missing.
+
+- **clean** (10): the commit's own change, judged lean when the cases were
+  built. A finding here counts as a false positive, so a disputed finding may
+  mean the label is wrong rather than the reviewer: check before tuning.
+- **planted** (10): the commit's change plus one known piece of bloat in its
+  added lines, one rule each (CM-02, CM-03, CM-06, CM-07, CM-08, PY-03, TS-01,
+  TS-02, RE-04, RE-05). Where the plant needed a caller, the caller was
+  changed too. Other findings in the real code count as false positives.

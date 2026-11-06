@@ -1,0 +1,15 @@
+{
+  "id": "real-py-planted-to-dict",
+  "lang": "python",
+  "kind": "planted",
+  "expected": [
+    {
+      "rule": "PY-03",
+      "path": "backend/app/api/schemas/recent.py",
+      "lines": [
+        17,
+        25
+      ]
+    }
+  ]
+}

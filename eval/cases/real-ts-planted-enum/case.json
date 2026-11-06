@@ -1,0 +1,15 @@
+{
+  "id": "real-ts-planted-enum",
+  "lang": "typescript-react",
+  "kind": "planted",
+  "expected": [
+    {
+      "rule": "TS-02",
+      "path": "frontend/src/utils/sort.ts",
+      "lines": [
+        4,
+        9
+      ]
+    }
+  ]
+}

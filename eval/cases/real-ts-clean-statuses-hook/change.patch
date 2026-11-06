@@ -1,0 +1,35 @@
+diff --git a/frontend/src/hooks/useProjectStatuses.ts b/frontend/src/hooks/useProjectStatuses.ts
+new file mode 100644
+index 0000000..3f4b9ec
+--- /dev/null
++++ b/frontend/src/hooks/useProjectStatuses.ts
+@@ -0,0 +1,29 @@
++import { useCallback, useEffect, useState } from 'react'
++import { statusesApi } from '../services/api'
++import type { ProjectStatusResponse } from '../services/api'
++
++export function useProjectStatuses(projectId: string | undefined) {
++  const [statuses, setStatuses] = useState<ProjectStatusResponse[]>([])
++  const [loading, setLoading] = useState(false)
++  const [error, setError] = useState<string | null>(null)
++
++  const fetch = useCallback(async () => {
++    if (!projectId) return
++    setLoading(true)
++    setError(null)
++    try {
++      const res = await statusesApi.list(projectId)
++      setStatuses(res.data)
++    } catch {
++      setError('Failed to load statuses')
++    } finally {
++      setLoading(false)
++    }
++  }, [projectId])
++
++  useEffect(() => {
++    fetch()
++  }, [fetch])
++
++  return { statuses, loading, error, refresh: fetch }
++}

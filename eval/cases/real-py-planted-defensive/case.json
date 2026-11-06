@@ -1,0 +1,15 @@
+{
+  "id": "real-py-planted-defensive",
+  "lang": "python",
+  "kind": "planted",
+  "expected": [
+    {
+      "rule": "CM-06",
+      "path": "backend/app/api/services/recent_service.py",
+      "lines": [
+        55,
+        58
+      ]
+    }
+  ]
+}

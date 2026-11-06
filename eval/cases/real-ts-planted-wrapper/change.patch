@@ -1,0 +1,49 @@
+diff --git a/frontend/src/components/layout/AppShell.tsx b/frontend/src/components/layout/AppShell.tsx
+index 029565c..abaf1cf 100644
+--- a/frontend/src/components/layout/AppShell.tsx
++++ b/frontend/src/components/layout/AppShell.tsx
+@@ -52,6 +52,16 @@ const ICheck = () => (
+     <path d="M20 6 9 17l-5-5"/>
+   </svg>
+ )
++const ISignOut = () => (
++  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7">
++    <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
++    <polyline points="16 17 21 12 16 7"/>
++    <line x1="21" y1="12" x2="9" y2="12"/>
++  </svg>
++)
++function SignOutIcon() {
++  return <ISignOut />
++}
+ 
+ const recentIcon = (type: RecentItemResponse['type']) => {
+   if (type === 'project') return <IFolder />
+@@ -98,7 +108,7 @@ export function AppShell({ children }: Props) {
+     }).catch(() => {})
+ 
+     recentApi.list().then((res) => {
+-      setRecentItems(res.data)
++      setRecentItems(res.data.slice(0, 5))
+     }).catch(() => {})
+   }, [])
+ 
+@@ -180,7 +190,8 @@ export function AppShell({ children }: Props) {
+               ))}
+               {hasMoreProjects && (
+                 <Link to="/projects" className={SUB_ITEM}>
+-                  {t('nav.all_projects')} →
++                  <span className="truncate">{t('nav.all_projects')}</span>
++                  <span className="shrink-0 ml-1">→</span>
+                 </Link>
+               )}
+             </div>
+@@ -240,7 +251,7 @@ export function AppShell({ children }: Props) {
+                   onClick={handleLogout}
+                   className="w-full flex items-center gap-2 px-3 py-2 text-[12.5px] text-stone-700 dark:text-stone-300 hover:bg-stone-50 dark:hover:bg-stone-800"
+                 >
+-                  <IPlus /> {t('shell.sign_out')}
++                  <SignOutIcon /> {t('shell.sign_out')}
+                 </button>
+               </div>
+             )}

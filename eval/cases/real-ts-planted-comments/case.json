@@ -1,0 +1,15 @@
+{
+  "id": "real-ts-planted-comments",
+  "lang": "typescript-react",
+  "kind": "planted",
+  "expected": [
+    {
+      "rule": "CM-08",
+      "path": "frontend/src/pages/TimelineView.tsx",
+      "lines": [
+        117,
+        120
+      ]
+    }
+  ]
+}

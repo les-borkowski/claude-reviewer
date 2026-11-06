@@ -1,0 +1,15 @@
+{
+  "id": "real-py-planted-options",
+  "lang": "python",
+  "kind": "planted",
+  "expected": [
+    {
+      "rule": "CM-02",
+      "path": "backend/app/api/services/task_service.py",
+      "lines": [
+        16,
+        27
+      ]
+    }
+  ]
+}

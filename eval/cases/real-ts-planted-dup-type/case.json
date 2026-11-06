@@ -1,0 +1,15 @@
+{
+  "id": "real-ts-planted-dup-type",
+  "lang": "typescript-react",
+  "kind": "planted",
+  "expected": [
+    {
+      "rule": "TS-01",
+      "path": "frontend/src/services/api.ts",
+      "lines": [
+        246,
+        251
+      ]
+    }
+  ]
+}

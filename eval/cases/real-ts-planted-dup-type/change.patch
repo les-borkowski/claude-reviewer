@@ -1,0 +1,63 @@
+diff --git a/frontend/src/services/api.ts b/frontend/src/services/api.ts
+index d26001d..753f26e 100644
+--- a/frontend/src/services/api.ts
++++ b/frontend/src/services/api.ts
+@@ -5,7 +5,7 @@ import i18n from '../i18n'
+ // Types
+ // ---------------------------------------------------------------------------
+ 
+-export type Status = 'to_do' | 'in_progress' | 'in_review' | 'in_testing' | 'done'
++export type Status = string
+ export type Priority = 'low' | 'medium' | 'high'
+ export type Role = 'manager' | 'contributor'
+ export type Theme = 'light' | 'dark' | 'system'
+@@ -105,6 +105,15 @@ export interface StatusHistoryEntry {
+   elapsed_seconds: number | null
+ }
+ 
++export interface ProjectStatusResponse {
++  id: string
++  project_id: string
++  slug: string
++  name: string
++  colour: string
++  order: number
++}
++
+ export interface TimeMetrics {
+   total_seconds: number
+   by_status: Record<Status, number>
+@@ -230,6 +239,33 @@ export const projectsApi = {
+     api.delete(`/projects/${id}/members/${userId}`),
+ }
+ 
++// ---------------------------------------------------------------------------
++// Project Statuses API
++// ---------------------------------------------------------------------------
++
++export interface CreateStatusInput {
++  slug: string
++  name: string
++  colour: string
++  order: number
++}
++
++export const statusesApi = {
++  list: (projectId: string) =>
++    api.get<ProjectStatusResponse[]>(`/projects/${projectId}/statuses`),
++  create: (
++    projectId: string,
++    data: { slug: string; name: string; colour: string; order: number }
++  ) => api.post<ProjectStatusResponse>(`/projects/${projectId}/statuses`, data),
++  update: (
++    projectId: string,
++    statusId: string,
++    data: { name?: string; colour?: string; order?: number }
++  ) => api.patch<ProjectStatusResponse>(`/projects/${projectId}/statuses/${statusId}`, data),
++  delete: (projectId: string, statusId: string) =>
++    api.delete(`/projects/${projectId}/statuses/${statusId}`),
++}
++
+ // ---------------------------------------------------------------------------
+ // Stories API
+ // ---------------------------------------------------------------------------

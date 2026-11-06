@@ -1,0 +1,15 @@
+{
+  "id": "real-ts-planted-hook",
+  "lang": "typescript-react",
+  "kind": "planted",
+  "expected": [
+    {
+      "rule": "RE-05",
+      "path": "frontend/src/pages/BacklogPage.tsx",
+      "lines": [
+        47,
+        50
+      ]
+    }
+  ]
+}

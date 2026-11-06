@@ -1,0 +1,47 @@
+diff --git a/backend/app/cli/config.py b/backend/app/cli/config.py
+new file mode 100644
+index 0000000..4708c11
+--- /dev/null
++++ b/backend/app/cli/config.py
+@@ -0,0 +1,41 @@
++from __future__ import annotations
++import json
++import os
++import stat
++from dataclasses import dataclass, asdict
++from pathlib import Path
++
++CONFIG_PATH = Path.home() / ".config" / "spt" / "config.json"
++DEFAULT_API_BASE_URL = "http://localhost:8000"
++DEFAULT_LOCALE = "en-GB"
++
++
++@dataclass
++class CLIConfig:
++    access_token: str | None = None
++    refresh_token: str | None = None
++    api_base_url: str = DEFAULT_API_BASE_URL
++    locale: str = DEFAULT_LOCALE
++
++    @classmethod
++    def load(cls) -> "CLIConfig":
++        if not CONFIG_PATH.exists():
++            return cls()
++        try:
++            with open(CONFIG_PATH) as f:
++                data = json.load(f)
++        except (json.JSONDecodeError, OSError):
++            return cls()
++        valid = cls.__dataclass_fields__
++        return cls(**{k: v for k, v in data.items() if k in valid})
++
++    def save(self) -> None:
++        CONFIG_PATH.parent.mkdir(parents=True, exist_ok=True)
++        with open(CONFIG_PATH, "w") as f:
++            json.dump(asdict(self), f, indent=2)
++        os.chmod(CONFIG_PATH, stat.S_IRUSR | stat.S_IWUSR)
++
++    def clear_tokens(self) -> None:
++        self.access_token = None
++        self.refresh_token = None
++        self.save()

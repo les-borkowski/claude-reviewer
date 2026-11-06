@@ -1,0 +1,15 @@
+{
+  "id": "real-ts-planted-wrapper",
+  "lang": "typescript-react",
+  "kind": "planted",
+  "expected": [
+    {
+      "rule": "RE-04",
+      "path": "frontend/src/components/layout/AppShell.tsx",
+      "lines": [
+        62,
+        64
+      ]
+    }
+  ]
+}

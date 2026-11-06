@@ -1,0 +1,43 @@
+diff --git a/frontend/src/hooks/useDebouncedValue.ts b/frontend/src/hooks/useDebouncedValue.ts
+new file mode 100644
+index 0000000..73eb82c
+--- /dev/null
++++ b/frontend/src/hooks/useDebouncedValue.ts
+@@ -0,0 +1,10 @@
++import { useEffect, useState } from 'react'
++
++export function useDebouncedValue<T>(value: T, delay: number): T {
++  const [debounced, setDebounced] = useState(value)
++  useEffect(() => {
++    const timer = setTimeout(() => setDebounced(value), delay)
++    return () => clearTimeout(timer)
++  }, [value, delay])
++  return debounced
++}
+diff --git a/frontend/src/pages/ProjectsPage.tsx b/frontend/src/pages/ProjectsPage.tsx
+index 0aab75c..ce760b2 100644
+--- a/frontend/src/pages/ProjectsPage.tsx
++++ b/frontend/src/pages/ProjectsPage.tsx
+@@ -3,6 +3,7 @@ import { Link, useLocation } from 'react-router-dom'
+ import { useTranslation } from 'react-i18next'
+ import { useProjects } from '../hooks/useProjects'
+ import { useRole } from '../hooks/useRole'
++import { useDebouncedValue } from '../hooks/useDebouncedValue'
+ import { StatusPill } from '../components/common/StatusPill'
+ import { PriorityBars } from '../components/common/PriorityBars'
+ import { LoadMoreButton } from '../components/common/LoadMoreButton'
+@@ -58,12 +59,13 @@ export function ProjectsPage() {
+   const [priorityFilter, setPriorityFilter] = useState<Priority | ''>('')
+   const [archived, setArchived] = useState(false)
+   const [search, setSearch] = useState('')
++  const debouncedSearch = useDebouncedValue(search, 300)
+ 
+   const { items, nextCursor, isLoading, initialized, refresh, loadMore } = useProjects({
+     status: statusFilter,
+     priority: priorityFilter,
+     archived,
+-    q: search,
++    q: debouncedSearch,
+   })
+ 
+   const location = useLocation()

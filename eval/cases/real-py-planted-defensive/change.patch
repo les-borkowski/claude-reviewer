@@ -1,0 +1,76 @@
+diff --git a/backend/app/api/services/recent_service.py b/backend/app/api/services/recent_service.py
+new file mode 100644
+index 0000000..b68e4b9
+--- /dev/null
++++ b/backend/app/api/services/recent_service.py
+@@ -0,0 +1,70 @@
++# backend/app/api/services/recent_service.py
++from sqlalchemy import select, union_all, literal, null, cast, or_
++from sqlalchemy.dialects.postgresql import UUID as PGUUID
++from sqlalchemy.ext.asyncio import AsyncSession
++
++from app.db.base import RoleEnum
++from app.db.models import Project, Story, Task, ProjectMember, User
++from app.api.schemas.recent import RecentItemResponse
++
++
++async def get_recent_items(user: User, db: AsyncSession) -> list[RecentItemResponse]:
++    if user.role == RoleEnum.manager:
++        project_ids_q = select(Project.id)
++    else:
++        project_ids_q = select(Project.id).where(
++            or_(
++                Project.owner_id == user.id,
++                Project.id.in_(
++                    select(ProjectMember.project_id).where(ProjectMember.user_id == user.id)
++                ),
++            )
++        )
++
++    projects_q = select(
++        literal("project").label("type"),
++        Project.id.label("id"),
++        Project.name.label("title"),
++        Project.id.label("project_id"),
++        cast(null(), PGUUID(as_uuid=True)).label("story_id"),
++        Project.updated_at.label("updated_at"),
++    ).where(Project.id.in_(project_ids_q))
++
++    stories_q = select(
++        literal("story").label("type"),
++        Story.id.label("id"),
++        Story.title.label("title"),
++        Story.project_id.label("project_id"),
++        cast(null(), PGUUID(as_uuid=True)).label("story_id"),
++        Story.updated_at.label("updated_at"),
++    ).where(Story.project_id.in_(project_ids_q))
++
++    tasks_q = select(
++        literal("task").label("type"),
++        Task.id.label("id"),
++        Task.title.label("title"),
++        Task.project_id.label("project_id"),
++        Task.story_id.label("story_id"),
++        Task.updated_at.label("updated_at"),
++    ).where(Task.project_id.in_(project_ids_q))
++
++    combined = union_all(projects_q, stories_q, tasks_q).subquery()
++    stmt = select(combined).order_by(combined.c.updated_at.desc()).limit(5)
++
++    rows = (await db.execute(stmt)).fetchall()
++    if rows is None:
++        return []
++    if not isinstance(rows, list):
++        rows = list(rows)
++
++    return [
++        RecentItemResponse(
++            type=row.type,
++            id=str(row.id),
++            title=row.title,
++            project_id=str(row.project_id),
++            story_id=str(row.story_id) if row.story_id else None,
++            updated_at=row.updated_at,
++        )
++        for row in rows
++    ]

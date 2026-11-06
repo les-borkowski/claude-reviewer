@@ -1,0 +1,15 @@
+{
+  "id": "real-py-planted-wrapper",
+  "lang": "python",
+  "kind": "planted",
+  "expected": [
+    {
+      "rule": "CM-03",
+      "path": "backend/app/admin/auth.py",
+      "lines": [
+        10,
+        12
+      ]
+    }
+  ]
+}

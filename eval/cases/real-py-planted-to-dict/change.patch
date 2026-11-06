@@ -1,0 +1,31 @@
+diff --git a/backend/app/api/schemas/recent.py b/backend/app/api/schemas/recent.py
+new file mode 100644
+index 0000000..7353624
+--- /dev/null
++++ b/backend/app/api/schemas/recent.py
+@@ -0,0 +1,25 @@
++# backend/app/api/schemas/recent.py
++from datetime import datetime
++from typing import Literal
++from pydantic import BaseModel
++
++
++class RecentItemResponse(BaseModel):
++    type: Literal["project", "story", "task"]
++    id: str
++    title: str
++    project_id: str
++    story_id: str | None
++    updated_at: datetime
++
++    model_config = {"from_attributes": True}
++
++    def to_dict(self) -> dict:
++        return {
++            "type": self.type,
++            "id": self.id,
++            "title": self.title,
++            "project_id": self.project_id,
++            "story_id": self.story_id,
++            "updated_at": self.updated_at,
++        }
