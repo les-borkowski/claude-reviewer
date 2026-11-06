@@ -35,3 +35,7 @@ python3 -m unittest discover -s tests -v
 
 - [Design](docs/design.md)
 - [Standards](standards/README.md)
+
+## License
+
+[MIT](LICENSE)
